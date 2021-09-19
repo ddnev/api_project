@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Data.SQLite;
 using System.Linq;
@@ -12,7 +11,6 @@ namespace emsiproject.DataAccess
     public class DataHandler : IDataHandler
     {
         public string DbPath { get; private set; }
-
         public DataAccessResponse Response { get; set; }
 
         public DataHandler()
@@ -46,8 +44,10 @@ namespace emsiproject.DataAccess
 
                     try
                     {
+                        // Compose query from predicate parameters
                         string predicate = ComposeQuery(name, abbr, display_id);
 
+                        // Execute query
                         using (SQLiteCommand command = new SQLiteCommand(predicate, connection))
                         {
                             // Execute query against db
@@ -56,6 +56,11 @@ namespace emsiproject.DataAccess
                                 // Store results
                                 DataTable dataTable = new DataTable();
                                 dataTable.Load(reader);
+
+                                // Count results for logging
+                                Response.RecordsReturned = dataTable.Rows.Count;
+                                
+                                // Convert to JSON for user consumption
                                 jsonString = JsonConvert.SerializeObject(dataTable);
                             }
                         }
@@ -63,8 +68,7 @@ namespace emsiproject.DataAccess
                     catch(Exception e)
                     {
                         Response.Success = false;
-                        Response.ValidationFailures.Add(new ValidationResult("DataHandler query failed."));
-                        Response.ValidationFailures.Add(new ValidationResult(e.Message));
+                        Response.Errors.Add("DataHandler query failed: " + e.Message);
                     }
 
                     connection.Close();
@@ -74,8 +78,7 @@ namespace emsiproject.DataAccess
             catch(Exception e)
             {
                 Response.Success = false;
-                Response.ValidationFailures.Add(new ValidationResult("DataHandler failed to open connection to database."));
-                Response.ValidationFailures.Add(new ValidationResult(e.Message));
+                Response.Errors.Add("DataHandler failed to open connection to database: " + e.Message);
             }
 
             return (jsonString, Response);

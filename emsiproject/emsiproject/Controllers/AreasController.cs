@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 // New dependencies
 using emsiproject.DataAccess;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 
 namespace emsiproject.Controllers
 {
@@ -25,13 +26,27 @@ namespace emsiproject.Controllers
         [HttpGet]
         public ActionResult<string> Areas(string name, string abbr, string display_id)
         {
-            _logger.LogInformation("Predicate parameters recieved");
+            var parameters = new { name = name, abbr = abbr, display_id = display_id };
+            _logger.LogInformation("Predicate parameters recieved: {@Parameters} ", parameters);
             string jsonString = string.Empty;
             DataAccessResponse response = new DataAccessResponse();
 
             try
             {
                 (jsonString, response) = _dataHandler.Search(name, abbr, display_id);
+
+                if(!response.IsValid)
+                {
+                    foreach (string error in response.Errors)
+                    {
+                        _logger.LogError("Error in DataHandler(): {@Error}", error);
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("Query Successful: " + response.IsValid.ToString() 
+                        + " - " + response.RecordsReturned.ToString() + " records returned");
+                }
             }
             catch(Exception e)
             {
