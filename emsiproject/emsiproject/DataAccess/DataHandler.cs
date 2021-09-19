@@ -26,7 +26,7 @@ namespace emsiproject.DataAccess
             DbPath = BaseDir + "Data\\areas.sqlite3";
         }
 
-        public string Search(string predicate)
+        public string Search(string name, string abbr, string display_id)
         {
             string JSONString = string.Empty;
 
@@ -36,13 +36,36 @@ namespace emsiproject.DataAccess
                 connection.Open();
 
                 // Build command
+                string predicate = "SELECT DISTINCT name, abbr, display_id FROM areas WHERE";
+                if(!string.IsNullOrEmpty(name))
+                {
+                    predicate = predicate + string.Format(" name like '{0}%'", name);
+                }
+
+                if (!string.IsNullOrEmpty(abbr))
+                {
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        predicate = predicate + " and ";
+                    }
+                    predicate = predicate + string.Format(" abbr like '{0}%'", abbr);
+                }
+
+                if (!string.IsNullOrEmpty(display_id))
+                {
+                    if(!string.IsNullOrEmpty(name) || !string.IsNullOrEmpty(abbr))
+                    {
+                        predicate = predicate + " and ";
+                    }
+                    predicate = predicate + string.Format(" display_id like '{0}%'", display_id);
+                }
+
                 using (SQLiteCommand command = new SQLiteCommand(predicate, connection))
                 {
                     // Execute query against db
                     using (SQLiteDataReader reader = command.ExecuteReader())
                     {
                         // Store results
-
                         DataTable dataTable = new DataTable();
                         dataTable.Load(reader);
                         JSONString = JsonConvert.SerializeObject(dataTable);

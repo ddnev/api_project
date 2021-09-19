@@ -26,10 +26,23 @@ namespace emsiproject.Controllers
         //    return await _context.Areas.ToListAsync();
         //}
 
-        [HttpGet("{predicate}")]
-        public ActionResult<string> GetAreas(string predicate)
+        [HttpGet]
+        //[Route("")]
+        //[Route("{q}")]
+        //[Route("{q}/{r?}")]
+        public ActionResult<string> Areas(string name, string abbr, string display_id)
         {
-            return _dataHandler.Search(predicate);
+            try
+            
+            {
+                return _dataHandler.Search(name, abbr, display_id);
+
+            }
+            catch(Exception e)
+            {
+                // Log
+                return NotFound();
+            }
         }
     }
 }
