@@ -17,9 +17,7 @@ using Serilog.Exceptions;
 using Serilog.Filters;
 using Serilog.Sinks.SystemConsole.Themes;
 // New Dependencies
-using Microsoft.EntityFrameworkCore;
-using emsiproject.Models;
-
+using emsiproject.DataAccess;
 
 namespace emsiproject
 {
@@ -50,7 +48,7 @@ namespace emsiproject
             });
 
             // Register DbContext
-            services.AddDbContext<AreasContext>();
+            services.AddScoped<IDataHandler, DataHandler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

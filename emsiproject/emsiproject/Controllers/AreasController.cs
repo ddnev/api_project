@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 // New dependencies
-using emsiproject.Models;
-using Microsoft.EntityFrameworkCore;
+using System.Data.SQLite;
+using emsiproject.DataAccess;
 
 namespace emsiproject.Controllers
 {
@@ -14,23 +14,22 @@ namespace emsiproject.Controllers
     [ApiController]
     public class AreasController : ControllerBase
     {
-        private readonly AreasContext _context;
-
-        public AreasController(AreasContext context)
+        private readonly IDataHandler _dataHandler;
+        public AreasController(IDataHandler dataHandler)
         {
-            _context = context;
+            _dataHandler = dataHandler;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Area>>> GetAreas()
-        {
-            return await _context.Areas.ToListAsync();
-        }
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<Area>>> GetAreas()
+        //{
+        //    return await _context.Areas.ToListAsync();
+        //}
 
-        [HttpGet("{name}")]
-        public async Task<ActionResult<IEnumerable<Area>>> GetAreas(string name)
+        [HttpGet("{predicate}")]
+        public ActionResult<string> GetAreas(string predicate)
         {
-            return await _context.Areas.Where(x=>x.Name == name).ToListAsync();
+            return _dataHandler.Search(predicate);
         }
     }
 }
