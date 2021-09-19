@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Data.SQLite;
 using System.Linq;
@@ -12,8 +13,14 @@ namespace emsiproject.DataAccess
     {
         public string DbPath { get; private set; }
 
+        public DataAccessResponse Response { get; set; }
+
         public DataHandler()
         {
+            // Initialize response object
+            Response = new DataAccessResponse();
+
+            // Set db connection string
             string BaseDir = "Data Source=" + AppDomain.CurrentDomain.BaseDirectory;
 
             //if "bin" is present, remove all the path starting from "bin" word
@@ -26,57 +33,83 @@ namespace emsiproject.DataAccess
             DbPath = BaseDir + "Data\\areas.sqlite3";
         }
 
-        public string Search(string name, string abbr, string display_id)
+        public (string, DataAccessResponse) Search(string name, string abbr, string display_id)
         {
-            string JSONString = string.Empty;
+            string jsonString = string.Empty;
 
-            // Open connection to db file
-            using (SQLiteConnection connection = new SQLiteConnection(DbPath))
+            try
             {
-                connection.Open();
-
-                // Build command
-                string predicate = "SELECT DISTINCT name, abbr, display_id FROM areas WHERE";
-                if(!string.IsNullOrEmpty(name))
+                // Open connection to db file
+                using (SQLiteConnection connection = new SQLiteConnection(DbPath))
                 {
-                    predicate = predicate + string.Format(" name like '{0}%'", name);
-                }
+                    connection.Open();
 
-                if (!string.IsNullOrEmpty(abbr))
-                {
-                    if (!string.IsNullOrEmpty(name))
+                    try
                     {
-                        predicate = predicate + " and ";
-                    }
-                    predicate = predicate + string.Format(" abbr like '{0}%'", abbr);
-                }
+                        string predicate = ComposeQuery(name, abbr, display_id);
 
-                if (!string.IsNullOrEmpty(display_id))
-                {
-                    if(!string.IsNullOrEmpty(name) || !string.IsNullOrEmpty(abbr))
+                        using (SQLiteCommand command = new SQLiteCommand(predicate, connection))
+                        {
+                            // Execute query against db
+                            using (SQLiteDataReader reader = command.ExecuteReader())
+                            {
+                                // Store results
+                                DataTable dataTable = new DataTable();
+                                dataTable.Load(reader);
+                                jsonString = JsonConvert.SerializeObject(dataTable);
+                            }
+                        }
+                    }
+                    catch(Exception e)
                     {
-                        predicate = predicate + " and ";
+                        Response.Success = false;
+                        Response.ValidationFailures.Add(new ValidationResult("DataHandler query failed."));
+                        Response.ValidationFailures.Add(new ValidationResult(e.Message));
                     }
-                    predicate = predicate + string.Format(" display_id like '{0}%'", display_id);
-                }
 
-                using (SQLiteCommand command = new SQLiteCommand(predicate, connection))
-                {
-                    // Execute query against db
-                    using (SQLiteDataReader reader = command.ExecuteReader())
-                    {
-                        // Store results
-                        DataTable dataTable = new DataTable();
-                        dataTable.Load(reader);
-                        JSONString = JsonConvert.SerializeObject(dataTable);
-                    }
+                    connection.Close();
+                    Response.Success = true;
                 }
-
-                connection.Close();
+            }
+            catch(Exception e)
+            {
+                Response.Success = false;
+                Response.ValidationFailures.Add(new ValidationResult("DataHandler failed to open connection to database."));
+                Response.ValidationFailures.Add(new ValidationResult(e.Message));
             }
 
-            return JSONString;
+            return (jsonString, Response);
 
+        }
+
+        private string ComposeQuery(string name, string abbr, string display_id)
+        {
+            // Build command
+            string predicate = "SELECT DISTINCT name, abbr, display_id FROM areas WHERE";
+            if (!string.IsNullOrEmpty(name))
+            {
+                predicate = predicate + string.Format(" name like '{0}%'", name);
+            }
+
+            if (!string.IsNullOrEmpty(abbr))
+            {
+                if (!string.IsNullOrEmpty(name))
+                {
+                    predicate = predicate + " and ";
+                }
+                predicate = predicate + string.Format(" abbr like '{0}%'", abbr);
+            }
+
+            if (!string.IsNullOrEmpty(display_id))
+            {
+                if (!string.IsNullOrEmpty(name) || !string.IsNullOrEmpty(abbr))
+                {
+                    predicate = predicate + " and ";
+                }
+                predicate = predicate + string.Format(" display_id like '{0}%'", display_id);
+            }
+
+            return predicate;
         }
 
     }

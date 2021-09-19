@@ -7,6 +7,6 @@ namespace emsiproject.DataAccess
 {
     public interface IDataHandler
     {
-        string Search(string name, string abbr, string display_id);
+        (string, DataAccessResponse) Search(string name, string abbr, string display_id);
     }
 }
