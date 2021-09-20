@@ -85,12 +85,6 @@ namespace emsiproject.DataAccess
             command.Parameters.AddWithValue("@abbr2", abbr + "%");
             command.Parameters.AddWithValue("@display_id2", display_id + "%");
 
-            string query = command.CommandText;
-            foreach (SQLiteParameter p in command.Parameters)
-            {
-                query = query.Replace(p.ParameterName, p.Value == null ? "null" : p.Value.ToString());
-            }
-
             return command;
         }
 
