@@ -54,7 +54,7 @@ Queries are parameterized by the same fields - name, abbreviation and display_id
 The query executed against the database is of the form:  
 > SELECT name, abbr, display_id FROM areas WHERE name like 'Pull%' and abbr LIKE 'W%' and display_id like 'ZIP9916%'  
       
-Structuring the query this way should support autocomplete and may not have as poor of performance as a contains (e.g., "LIKE '%searchterm%'") predicate. Additionally, this format supports query parameterization to prevent SQL injection. Note: In it's current form the SQL query is still generated in a vulnerable, naive manner.  
+Structuring the query this way should support autocomplete and may not have as poor of performance as a contains (e.g., "LIKE '%searchterm%'") predicate. Additionally, this format supports query parameterization to prevent SQL injection.   
       
 Basic logging is implemented, including:
       <li> The expected database file location
@@ -64,7 +64,6 @@ Basic logging is implemented, including:
       <li> Query errors
         
 ## To Do
-<li> SQL query generation should be improved with regard to injection protection.
 <li> This solution doesn't implement any certification. 
         
 
