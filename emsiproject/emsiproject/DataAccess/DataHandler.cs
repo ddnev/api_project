@@ -35,11 +35,8 @@ namespace emsiproject.DataAccess
 
                     try
                     {
-                        // Compose query from predicate parameters
-                        string predicate = ComposeQuery(name, abbr, display_id);
-
                         // Execute query
-                        using (SQLiteCommand command = new SQLiteCommand(predicate, connection))
+                        using (SQLiteCommand command = ComposeQuery(connection, name, abbr, display_id))
                         {
                             // Execute query against db
                             using (SQLiteDataReader reader = command.ExecuteReader())
@@ -76,34 +73,25 @@ namespace emsiproject.DataAccess
 
         }
 
-        private string ComposeQuery(string name, string abbr, string display_id)
+        private SQLiteCommand ComposeQuery(SQLiteConnection connection, string name, string abbr, string display_id)
         {
-            // Build command
-            string predicate = "SELECT DISTINCT name, abbr, display_id FROM areas WHERE";
-            if (!string.IsNullOrEmpty(name))
+            SQLiteCommand command = connection.CreateCommand();
+
+            command.CommandText = "SELECT DISTINCT name, abbr, display_id FROM areas WHERE (@name is null OR name LIKE @name2) AND (@abbr is null OR abbr LIKE @abbr2) AND (@display_id is null OR display_id LIKE @display_id2)";
+            command.Parameters.Add(new SQLiteParameter("@name", name));
+            command.Parameters.Add(new SQLiteParameter("@abbr", abbr));
+            command.Parameters.Add(new SQLiteParameter("@display_id", display_id));
+            command.Parameters.AddWithValue("@name2", name + "%");
+            command.Parameters.AddWithValue("@abbr2", abbr + "%");
+            command.Parameters.AddWithValue("@display_id2", display_id + "%");
+
+            string query = command.CommandText;
+            foreach (SQLiteParameter p in command.Parameters)
             {
-                predicate = predicate + string.Format(" name like '{0}%'", name);
+                query = query.Replace(p.ParameterName, p.Value == null ? "null" : p.Value.ToString());
             }
 
-            if (!string.IsNullOrEmpty(abbr))
-            {
-                if (!string.IsNullOrEmpty(name))
-                {
-                    predicate = predicate + " and ";
-                }
-                predicate = predicate + string.Format(" abbr like '{0}%'", abbr);
-            }
-
-            if (!string.IsNullOrEmpty(display_id))
-            {
-                if (!string.IsNullOrEmpty(name) || !string.IsNullOrEmpty(abbr))
-                {
-                    predicate = predicate + " and ";
-                }
-                predicate = predicate + string.Format(" display_id like '{0}%'", display_id);
-            }
-
-            return predicate;
+            return command;
         }
 
     }

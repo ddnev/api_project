@@ -31,29 +31,32 @@ namespace emsiproject.Controllers
             string jsonString = string.Empty;
             DataAccessResponse response = new DataAccessResponse();
 
-            try
+            if(!String.IsNullOrEmpty(name) || !String.IsNullOrEmpty(abbr) || !String.IsNullOrEmpty(display_id))
             {
-                (jsonString, response) = _dataHandler.Search(name, abbr, display_id);
-
-                _logger.LogInformation("DataHandler Db Path: " + response.DbPath);
-
-                if(!response.IsValid)
+                try
                 {
-                    foreach (string error in response.Errors)
+                    (jsonString, response) = _dataHandler.Search(name, abbr, display_id);
+
+                    _logger.LogInformation("DataHandler Db Path: " + response.DbPath);
+
+                    if (!response.IsValid)
                     {
-                        _logger.LogError("Error in DataHandler(): {@Error}", error);
+                        foreach (string error in response.Errors)
+                        {
+                            _logger.LogError("Error in DataHandler(): {@Error}", error);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Query Successful: " + response.IsValid.ToString()
+                            + " - " + response.RecordsReturned.ToString() + " records returned");
                     }
                 }
-                else
+                catch (Exception e)
                 {
-                    _logger.LogInformation("Query Successful: " + response.IsValid.ToString() 
-                        + " - " + response.RecordsReturned.ToString() + " records returned");
+                    _logger.LogError("Call to DataHandler.Search() Failed: " + e.Message);
+                    return StatusCode(500);
                 }
-            }
-            catch(Exception e)
-            {
-                _logger.LogError("Call to DataHandler.Search() Failed: " + e.Message);
-                return StatusCode(500);
             }
 
             return jsonString;
