@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 // New dependencies
-using emsiproject.Models;
-using Microsoft.EntityFrameworkCore;
+using emsiproject.DataAccess;
+using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 
 namespace emsiproject.Controllers
 {
@@ -14,23 +15,51 @@ namespace emsiproject.Controllers
     [ApiController]
     public class AreasController : ControllerBase
     {
-        private readonly AreasContext _context;
-
-        public AreasController(AreasContext context)
+        private readonly IDataHandler _dataHandler;
+        private readonly ILogger<AreasController> _logger;
+        public AreasController(IDataHandler dataHandler, ILogger<AreasController> logger)
         {
-            _context = context;
+            _dataHandler = dataHandler;
+            _logger = logger;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Area>>> GetAreas()
+        public ActionResult<string> Areas(string name, string abbr, string display_id)
         {
-            return await _context.Areas.ToListAsync();
-        }
+            var parameters = new { name = name, abbr = abbr, display_id = display_id };
+            _logger.LogInformation("Predicate parameters recieved: {@Parameters} ", parameters);
+            string jsonString = string.Empty;
+            DataAccessResponse response = new DataAccessResponse();
 
-        [HttpGet("{name}")]
-        public async Task<ActionResult<IEnumerable<Area>>> GetAreas(string name)
-        {
-            return await _context.Areas.Where(x=>x.Name == name).ToListAsync();
+            if(!String.IsNullOrEmpty(name) || !String.IsNullOrEmpty(abbr) || !String.IsNullOrEmpty(display_id))
+            {
+                try
+                {
+                    (jsonString, response) = _dataHandler.Search(name, abbr, display_id);
+
+                    _logger.LogInformation("DataHandler Db Path: " + response.DbPath);
+
+                    if (!response.IsValid)
+                    {
+                        foreach (string error in response.Errors)
+                        {
+                            _logger.LogError("Error in DataHandler(): {@Error}", error);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Query Successful: " + response.IsValid.ToString()
+                            + " - " + response.RecordsReturned.ToString() + " records returned");
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("Call to DataHandler.Search() Failed: " + e.Message);
+                    return StatusCode(500);
+                }
+            }
+
+            return jsonString;
         }
     }
 }
