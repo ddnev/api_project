@@ -18,17 +18,8 @@ namespace emsiproject.DataAccess
             // Initialize response object
             Response = new DataAccessResponse();
 
-            // Set db connection string
-            string BaseDir = "Data Source=" + AppDomain.CurrentDomain.BaseDirectory;
-
-            //if "bin" is present, remove all the path starting from "bin" word
-            if (BaseDir.Contains("bin"))
-            {
-                int index = BaseDir.IndexOf("bin");
-                BaseDir = BaseDir.Substring(0, index);
-            }
-
-            DbPath = BaseDir + "Data\\areas.sqlite3";
+            DbPath = "Data Source=areas.sqlite3";
+            Response.DbPath = DbPath;
         }
 
         public (string, DataAccessResponse) Search(string name, string abbr, string display_id)

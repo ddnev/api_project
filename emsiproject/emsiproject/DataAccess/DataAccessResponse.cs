@@ -11,5 +11,7 @@ namespace emsiproject.DataAccess
         public List<string> Errors { get; set; } = new List<string>();
         public bool IsValid { get { return (Errors == null || Errors.Count == 0); } }
         public int RecordsReturned { get; set; }
+
+        public string DbPath { get; set; }
     }
 }

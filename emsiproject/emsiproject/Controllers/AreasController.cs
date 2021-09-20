@@ -35,6 +35,8 @@ namespace emsiproject.Controllers
             {
                 (jsonString, response) = _dataHandler.Search(name, abbr, display_id);
 
+                _logger.LogInformation("DataHandler Db Path: " + response.DbPath);
+
                 if(!response.IsValid)
                 {
                     foreach (string error in response.Errors)
